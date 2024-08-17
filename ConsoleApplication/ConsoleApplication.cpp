@@ -100,7 +100,7 @@ std::vector<Point> calculateExpandedBoundingBox(const Point& center, double widt
 
     // 旋转并平移到中心点
     for (size_t i = 0; i < corners.size(); ++i) {
-        corners[i] = rotatePoint_anticlockwise(cornersRel[i], cosTheta, sinTheta);
+        corners[i] = rotatePoint_anticlockwise(cornersRel[i], cosTheta, sinTheta); //todo: 顺时针逆时针需要解决
         corners[i].x += center.x;
         corners[i].y += center.y;
     }
@@ -111,7 +111,7 @@ std::vector<Point> calculateExpandedBoundingBox(const Point& center, double widt
 // 打印矩形顶点
 void printCorners(const std::vector<Point>& corners) {
     for (const auto& corner : corners) {
-        std::cout << "Point: (" << corner.x << ", " << corner.y << ")\n";
+        std::cout  << "\nPoint: (" << corner.x << ", " << corner.y << ")";
     }
 }
 
@@ -138,7 +138,7 @@ BoundingBox calculateRotatedBoundingBox(const Point& p1, const Point& p2) {
     // 计算方向向量和角度
     double dx = p2.x - p1.x;
     double dy = p2.y - p1.y;
-    box.angle = std::atan2(dy, dx);
+    box.angle = std::atan2(dy, dx); //todo: 这里计算的首尾包围框的旋转角 返回-PI 到 PI
     cout << std::format("\nbox.angle：{}", box.angle);
 
     // 计算两点距离
@@ -292,11 +292,6 @@ int main(int argc, char** argv) {
         double angle = angleBetweenPoints(points[i], points[i+1], points[i+2]);
         angleBetweenPoints_all.push_back(angle);
     }
-    //判断开角的两个边的顶点在哪个象限，再根据第一个线段与横轴的开度与开角的开度进行判断得出拓展点是否需要翻转（13象限还是24象限）
-    // --Todo--
-    // A B 为边角， C为顶点
-    // 首先通过叉积计算出一个线段对于第二个线段是逆时针还是顺时针， 后面也可以根据这个进行排序（前后对应）
-    // AB在同一个象限， 拓展点必在这象限
 
     std::vector<std::array<Point, 4>> waitRotatePoints; //保存待旋转点
     // 计算每个线段的两个待旋转点进行绑定，可以绑定在待旋转点中，与原线段的两个点一起。
@@ -351,20 +346,24 @@ int main(int argc, char** argv) {
     BoundingBox box2 = calculateRotatedBoundingBox(points[points.size()-2], points[points.size()-1]); // 存储3个数的索引值分别为0 1 2 所以为.size()-1
     std::vector<Point> expandedCorners1 = calculateExpandedBoundingBox(box1.centerPoint, box1.width, box1.height, box1.angle, extendX, extendY);
     // 打印结果
+    std::cout << "\n第一个线段的包围框为：";
     printCorners(expandedCorners1);
     std::vector<Point> expandedCorners2 = calculateExpandedBoundingBox(box2.centerPoint, box2.width, box2.height, box2.angle, extendX, extendY);
     // 打印结果
+    std::cout << "\n最后一个线段的包围框为：";
     printCorners(expandedCorners2);
+
     // expandedCorners1[0] 是切割框第一个点，expandedCorners1[3] 是切割框最后一个点
     OutputPts.push_back(expandedCorners1[0]);
 
     for (const auto& [id, pt] : std::ranges::views::enumerate(RotatedPoints)) {
         OutputPts.push_back(RotatedPoints[id][0]);
     }
-    OutputPts.push_back(expandedCorners1[1]); 
-    OutputPts.push_back(expandedCorners1[2]);
+    OutputPts.push_back(expandedCorners2[1]); 
+    OutputPts.push_back(expandedCorners2[2]);
+    // 倒序输入错误
     for (const auto& [id, pt] : std::ranges::views::enumerate(RotatedPoints | std::views::reverse)) {
-        OutputPts.push_back(RotatedPoints[id][1]);
+        OutputPts.push_back(pt[1]); //std::views::reverse 反向指挥对pt进行反向，id索引还是正向的 
     }
     OutputPts.push_back(expandedCorners1[3]); // 最后一个点
 
