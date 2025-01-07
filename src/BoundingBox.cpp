@@ -158,7 +158,7 @@ double angleBetweenPoints(const Point &A, const Point &B, const Point &C) {
   // 可以将弧度转换为度显示
   // cout << std::format("夹角为: {}", angle = angle * 180.0 / M_PI);
   // 这段代码会先对angle进行修改，在进行输出，后面的return会变成度。
-  cout << std::format("\n夹角为: {}°", angle * 180.0 / M_PI);
+  cout << std::format("\n夹角为: {:.2f}°", angle * 180.0 / M_PI);
 
   return angle;
 }
@@ -178,20 +178,18 @@ std::array<Point, 4> widthBetweenAngle(const Point &A, const Point &B,
   double crossProduct = vecBA_x * vecBC_y - vecBA_y * vecBC_x;
 
   // angle 弧度
-  double halfAngle = angle * 0.5;
+  double halfAngle = angle * 0.5; // 中间点对是在角度的1/2处，所以需要除以2
   // C++ 标准库的 std::sin 函数接受弧度制角度。因此，在使用 std::sin(angle)
   // 之前需要确保 angle 是弧度制。
   double distenceUp2{
-      extendY /
-      std::tan(
-          halfAngle)}; // 计算出边界点基于原点的偏移，应该旋转后，再加上pointBd的坐标，而不是先加上再旋转！
-  // 所以两个点是 （pointB.y + distenceUp2; pointB.x + extendY） 与 （pointB.y -
-  // distenceUp2, pointB.x - extendY） 再进行旋转即可
+      extendY / std::tan(halfAngle) // 得出由于角度偏移计算出边界点基于原点的X轴距离偏移，应该旋转后，再加上pointBd的坐标，而不是先加上再旋转！
+      }; 
+  // 所以两个点是  外角（pointB.y + distenceUp2; pointB.x + extendY） 与 内角（pointB.y - distenceUp2, pointB.x - extendY） 再进行旋转即可
   // 如果是顺时针，就是13象限，如果是逆时针，那就是24象限。
-  if (crossProduct > 0) { // 逆时针 拓展点位于24象限
+  if (crossProduct > 0) { // 逆时针 点A在点B左侧 拓展点位于24象限
     pointBextend1 = {-extendY, distenceUp2};
     pointBextend2 = {extendY, -distenceUp2};
-  } else { // 顺时针 拓展点位于13象限
+  } else { // 顺时针 点A在点B右侧 拓展点位于13象限
     pointBextend1 = {-extendY, -distenceUp2};
     pointBextend2 = {extendY, distenceUp2};
   }
@@ -200,12 +198,13 @@ std::array<Point, 4> widthBetweenAngle(const Point &A, const Point &B,
   // 输出显示rotatePt：
   std::cout << "\nRotate Points:" << std::endl;
   for (std::size_t id{0}; id < rotatePt.max_size(); ++id) {
-    std::cout << std::format("{}. ({},{})\n", id + 1, rotatePt[id].x,
-                             rotatePt[id].y);
+    std::cout << std::format("{}. ({},{})\n", id + 1, rotatePt[id].x, rotatePt[id].y);
+    std::cout << "待旋转" << halfAngle << std::endl;
   }
 
   return rotatePt;
 }
+
 // 可以分类成内交点和外交点
 std::vector<Point> AnglePoint_raw(const double Angle, const double &cornerWidth,
                                   const Point &middlePoint) {
