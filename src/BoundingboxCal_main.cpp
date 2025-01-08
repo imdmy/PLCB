@@ -47,70 +47,80 @@ int main(int argc, char **argv) {
   for (int i{0}; i < points.size() - 1; i++) {
     // 获取基本旋转角 是否需要 (0.8*M_PI - s_Ag)定为旋转点
     double s_Ag{rotateAngle(points[i], points[i + 1])};
-    rotate_Angle_all.push_back(s_Ag);
+    rotate_Angle_all.push_back(s_Ag);  // 存储所有两点线段的偏转角，后续计算的夹角组成的内外夹点是基于第二个点B（设定在原点）双侧的，所有需要对内外夹角再进行偏转角旋转，然后加上B的原始偏移。
   }
+  // 输出线段偏转角
+  for (const double &angle : rotate_Angle_all) {
+    cout << "[debug] 线段对于x轴的偏转角度为: " << angle * 180 / M_PI << "°\n";
+  }
+
+
   // 计算每三个点的夹角 计算的夹角总是基于 0 至 180°
   std::vector<double> angleBetweenPoints_all; // 保存所有线段组成的夹角
   for (int i = 0; i < points.size() - 2; i++) {
-    double angle = angleBetweenPoints(points[i], points[i + 1],
-                                      points[i + 2]); // 计算三点夹角
-    angleBetweenPoints_all.push_back(angle);
+    double angle = angleBetweenPoints(points[i], points[i + 1], points[i + 2]); // 计算三点夹角
+    angleBetweenPoints_all.push_back(angle); // 用于存储所有三点组成的夹角，用于计算初始内外夹点的位置
+  }
+  // 输出线段偏转角
+  for (const double &angle : angleBetweenPoints_all) {
+    cout << "[debug] 三点组成的夹角为: " << angle * 180 / M_PI << "°\n";
   }
 
   std::vector<std::array<Point, 4>> waitRotatePoints; // 保存待旋转点
   // 计算每个线段的两个待旋转点进行绑定，可以绑定在待旋转点中，与原线段的两个点一起。
   for (int i{0}; i < points.size() - 2; i++) {
     std::array<Point, 4> rotatePt = widthBetweenAngle(  // 计算夹角内外包围点  // TODO: 优化容器设计
-        points[i], points[i + 1], points[i + 2], angleBetweenPoints_all[i],
-        extendY); // 单线段中由两个点生成两个的待旋转点。
+        points[i], points[i + 1], points[i + 2], angleBetweenPoints_all[i], extendY); // 单线段中由两个点生成两个的待旋转点。
     waitRotatePoints.push_back(rotatePt);
   }
 
-  // 输出旋转点对，两个为一对，并进行排序
-  std::vector<std::array<Point, 2>> RotatedPoints; // 保存旋转后的点 array是固定大小的标准库容器
-  // 后续四个点为组一起旋转
-  // 分类判断 第一个点基于第二个点在第几象限  考虑如果位于象限上怎么办？
-  // 如何处理？
-  // 两点为组进行判断， 目前第二个点设定为在远点，第一个点需要绕其进行旋转
+  std::cin.get();
+  std::cout << "测试结束" << std::endl;
+  std::vector<std::array<Point, 2>> RotatedPoints; // 保存旋转后的内外夹点
+  // 如果中间内外夹点的位置不正确，则这块有问题
   for (const auto &[index, unroPts] : std::ranges::views::enumerate(waitRotatePoints)) { // C23标准
+    // unroPts = {A, B, pointBextend1, pointBextend2};
     if ((unroPts[0].x - unroPts[1].x) >= 0 && (unroPts[0].y - unroPts[1].y) >  0) { // 第一个点位于基点第一象限 顺时针旋转
       // 其实就是对夹角那两个点进行旋转，无需对基点（基准）坐标进行旋转
       bool direction{true};
       double rotateAngle = hfM_PI - rotate_Angle_all[index]; // 弧度
+      std::cout << "顺时针旋转" << rotateAngle * 180 / M_PI << "°" << endl;
       std::array<Point, 2> rotatedPoints_Array = rotate4Points(unroPts, rotateAngle, direction);
       RotatedPoints.push_back(rotatedPoints_Array);
     }
     else if ((unroPts[0].x - unroPts[1].x) > 0 && (unroPts[0].y - unroPts[1].y) <= 0) { // 第一个点位于基点第四象限 顺时针旋转
       bool direction{true};
       double rotateAngle = hfM_PI + rotate_Angle_all[index];
-      cout << std::format("旋转角为: {}", rotateAngle * 180 / M_PI) << endl;
-      std::array<Point, 2> rotatedPoints_Array =
-          rotate4Points(unroPts, rotateAngle, direction);
+      std::cout << "顺时针旋转" << rotateAngle * 180 / M_PI << "°" << endl;
+      std::array<Point, 2> rotatedPoints_Array = rotate4Points(unroPts, rotateAngle, direction);
       RotatedPoints.push_back(rotatedPoints_Array);
     }
     else if ((unroPts[0].x - unroPts[1].x) < 0 && (unroPts[0].y - unroPts[1].y) >= 0) { // 第一个点位于基点第二象限 逆时针旋转
       bool direction{false};
       double rotateAngle = hfM_PI - rotate_Angle_all[index];
-      std::array<Point, 2> rotatedPoints_Array =
-          rotate4Points(unroPts, rotateAngle, direction);
+      std::cout << "逆时针旋转" << rotateAngle * 180 / M_PI << "°" << endl;
+      std::array<Point, 2> rotatedPoints_Array = rotate4Points(unroPts, rotateAngle, direction);
       RotatedPoints.push_back(rotatedPoints_Array);
     }
     else if ((unroPts[0].x - unroPts[1].x) <= 0 && (unroPts[0].y - unroPts[1].y) < 0) { // 第一个点位于基点第三象限 逆时针旋转
       bool direction{false};
       double rotateAngle = hfM_PI + rotate_Angle_all[index];
-      std::array<Point, 2> rotatedPoints_Array =
-          rotate4Points(unroPts, rotateAngle, direction);
+      std::cout << "逆时针旋转" << rotateAngle * 180 / M_PI << "°" << endl;
+      std::array<Point, 2> rotatedPoints_Array = rotate4Points(unroPts, rotateAngle, direction);
       RotatedPoints.push_back(rotatedPoints_Array);
     }
   }
 
-  cout << "\n\n旋转后的点为: ";
+  // 旋转后的内外夹点位置验证
+  cout << "\n\n旋转后的内外夹点位置为 : ";
   for (const auto &[i, point] : std::ranges::views::enumerate(RotatedPoints)) {
     cout << std::format("\n第{}组点的坐标为：", i + 1);
     cout << std::format("\n\tPoint{}:({},{})", 1, point[0].x, point[0].y);
     cout << std::format("\n\tPoint{}:({},{})", 2, point[1].x, point[1].y);
   }
 
+  // 计算首尾拓展点
+  std::cout << "\n\n开始计算首尾拓展点" << std::endl;
   // 排序，按照逆时针排序
   // 首先计算好首位点
   BoundingBox box1 = calculateRotatedBoundingBox(points[0], points[1]);

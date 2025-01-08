@@ -22,41 +22,65 @@ Point rotatePoint_clockwise(const Point &p, double cosTheta, double sinTheta) {
                -p.x * sinTheta + p.y * cosTheta};
 }
 // 重载顺时针旋转函数
-void rotatePoint_clockwise(Point &p, double angle,
-                           const Point &offset) { // offset偏移量
-  p.x = p.x * std::cos(angle) + p.y * std::sin(angle);
-  p.y = -p.x * std::sin(angle) + p.y * std::cos(angle);
-  p.x += offset.x;
-  p.y += offset.y;
+Point rotatePoint_clockwise(const Point &p, const double angle, const Point &offset) { // offset偏移量
+  Point returnP;
+  returnP.x = p.x * std::cos(angle) + p.y * std::sin(angle);
+  returnP.y = -p.x * std::sin(angle) + p.y * std::cos(angle);
+  returnP.x += offset.x;
+  returnP.y += offset.y;
+  return returnP;
 }
+
 // 重载逆时针旋转函数
-void rotatePoint_anticlockwise(Point &p, double angle, const Point &offset) {
-  p.x = p.x * std::cos(angle) - p.y * std::sin(angle);
-  p.y = p.x * std::sin(angle) + p.y * std::cos(angle);
-  p.x += offset.x;
-  p.y += offset.y;
+// 错误，第二个p.x已经使用了转换后的x坐标，导致旋转错误！！！
+/* p.x = p.x * std::cos(angle) - p.y * std::sin(angle);
+p.y = p.x * std::sin(angle) + p.y * std::cos(angle); */
+Point rotatePoint_anticlockwise(const Point &p, const double angle, const Point &offset) {
+  Point returnP;
+  std::cout << "输入的偏移(即点B)为： " << std::format("{:.4f} {:.4f}", offset.x, offset.y)  << endl;
+  std::cout << "旋转角" << angle * 180 / M_PI << "°" << endl;
+  std::cout << " > 旋转的点为：" << std::format("{:.4f} {:.4f}", p.x, p.y) << endl;
+  returnP.x = p.x * std::cos(angle) - p.y * std::sin(angle);
+  returnP.y = p.x * std::sin(angle) + p.y * std::cos(angle);
+  std::cout << "旋转后的坐标为(未偏移): " << std::format("{:.4f} {:.4f}", returnP.x, returnP.y) << endl;
+  returnP.x += offset.x;
+  returnP.y += offset.y;
+  std::cout << "增加偏移后: " << std::format("{:.4f} {:.4f}", returnP.x, returnP.y) << endl;
+  return returnP;
 }
 // 定义函数： 输入std::array<Point, 4> points 四个点
 // 以及旋转角，返回旋转后的array四个点 首先定义待输出的array rotatedPoints
 // 首先计算旋转角的sin cos， 然后遍历每个点进行旋转，然后再push 进入新的输出
+// intput： {A, B, pointBextend1, pointBextend2}; 旋转角angle; 旋转方向direction;
+// output: return 旋转后的内外夹点
 std::array<Point, 2> rotate4Points(const std::array<Point, 4> &waitroPoints,
                                    const double &angle, const bool direction) {
-  std::array<Point, 2> rotatedPoints{
+  std::cout << "开始旋转, 目前旋转点" << waitroPoints[2].x << " "
+            << waitroPoints[2].y << "; " << waitroPoints[3].x << " "
+            << waitroPoints[3].y << endl;
+            
+/*   std::array<Point, 2> rotatedPoints{
       // 保存旋转后的两个夹角点
       waitroPoints[2], waitroPoints[3] // 准备待旋转点
-  };
-  if (direction) { // direction = true 顺时针
-    for (Point &point : rotatedPoints) {
-      rotatePoint_clockwise(
-          point, angle,
-          waitroPoints[1]); // 参数： 未偏移的待旋转点，旋转角， 偏移量
-    }
-  } else // direction = false 逆时针
+  }; */
+
+  std::array<Point, 2> rotatedPoints;
+  if (direction == true) {  // direction = true 顺时针
+    // 错误！std::array 不支持 push_back
+    rotatedPoints[0] = rotatePoint_clockwise(waitroPoints[2], angle, waitroPoints[1]); // 分别对每个内外点进行旋转偏移
+    rotatedPoints[1] = rotatePoint_clockwise(waitroPoints[3], angle, waitroPoints[1]);
+
+  } else if (direction == false) // direction = false 逆时针
   {
     for (Point &point : rotatedPoints) {
-      rotatePoint_anticlockwise(point, angle, waitroPoints[1]);
+      rotatedPoints[0] = rotatePoint_anticlockwise(waitroPoints[2], angle, waitroPoints[1]); // 参数： 未偏移的待旋转点，旋转角， 偏移量点B
+      rotatedPoints[1] = rotatePoint_anticlockwise(waitroPoints[3], angle, waitroPoints[1]);
     }
   }
+  std::cout << "旋转后的点坐标为： X: " << rotatedPoints[0].x << " "
+            << rotatedPoints[0].y << "; Y: " << rotatedPoints[1].x << " "
+            << rotatedPoints[1].y << endl;
+  std::cin.get();
   return rotatedPoints;
 }
 
@@ -108,9 +132,10 @@ double rotateAngle(const Point &p1, const Point &p2) {
   double dx = std::abs(p2.x - p1.x); // 获取横轴跨度
   double dy = std::abs(p2.y - p1.y); // 获取纵轴跨度
   rotateangle = std::atan2(dy, dx);  // 获取的是线段与x轴夹角 弧度
-  cout << std::format("box.angle:{}°", rotateangle * (180 / M_PI));
+  cout << std::format("box.angle:{}°\t", rotateangle * (180 / M_PI));
   return rotateangle;
 }
+
 // 计算旋转包围框
 BoundingBox calculateRotatedBoundingBox(const Point &p1, const Point &p2) {
   BoundingBox box;
@@ -123,7 +148,7 @@ BoundingBox calculateRotatedBoundingBox(const Point &p1, const Point &p2) {
   double dx = p2.x - p1.x;
   double dy = p2.y - p1.y;
   box.angle = std::atan2(dy, dx); //todo: 这里计算的首尾包围框的旋转角返回-PI 到 PI 
-  cout << std::format("\nbox.angle:{}", box.angle); 
+  // cout << std::format("\nbox.angle:{}", box.angle); 
 
   /* box.angle = rotateAngle(p1, p2); */
 
@@ -158,7 +183,7 @@ double angleBetweenPoints(const Point &A, const Point &B, const Point &C) {
   // 可以将弧度转换为度显示
   // cout << std::format("夹角为: {}", angle = angle * 180.0 / M_PI);
   // 这段代码会先对angle进行修改，在进行输出，后面的return会变成度。
-  cout << std::format("\n夹角为: {:.2f}°", angle * 180.0 / M_PI);
+  // cout << std::format("\n夹角为: {:.2f}°", angle * 180.0 / M_PI);
 
   return angle;
 }
@@ -199,7 +224,7 @@ std::array<Point, 4> widthBetweenAngle(const Point &A, const Point &B,
   std::cout << "\nRotate Points:" << std::endl;
   for (std::size_t id{0}; id < rotatePt.max_size(); ++id) {
     std::cout << std::format("{}. ({},{})\n", id + 1, rotatePt[id].x, rotatePt[id].y);
-    std::cout << "待旋转" << halfAngle << std::endl;
+    std::cout << "内外夹点待旋转" << halfAngle * 180 / M_PI << "°\n" << std::endl;
   }
 
   return rotatePt;

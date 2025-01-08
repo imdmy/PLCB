@@ -34,10 +34,10 @@ Point rotatePoint_anticlockwise(const Point &p, double cosTheta,
 Point rotatePoint_clockwise(const Point &p, double cosTheta, double sinTheta);
 
 // 重载顺时针旋转函数
-void rotatePoint_clockwise(Point &p, double angle, const Point &offset);
+Point rotatePoint_clockwise(const Point &p, const double angle, const Point &offset);
 
 // 重载逆时针旋转函数
-void rotatePoint_anticlockwise(Point &p, double angle, const Point &offset);
+Point rotatePoint_anticlockwise(const Point &p, const double angle, const Point &offset);
 
 // 定义函数： 输入std::array<Point, 4> points 四个点
 // 以及旋转角，返回旋转后的array四个点 首先定义待输出的array rotatedPoints
